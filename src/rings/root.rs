@@ -1,0 +1,153 @@
+use std::fmt;
+use std::fmt::Formatter;
+use std::ops::{Index, IndexMut};
+
+#[derive(Debug)]
+pub struct Instruction(pub u8, pub Vec<u8>);
+
+pub type Program = Vec<Vec<u8>>;
+
+#[derive(Debug)]
+pub struct Strip {
+    array: Vec<u8>,
+    offset: u8,
+}
+
+#[derive(Debug)]
+pub struct ProgramEnvironment {
+    strips: Vec<Strip>,
+    pub correction: bool,
+    pub ip: u16,
+    pub stdin: fn() -> Result<u8, std::io::Error>,
+    pub stdout: fn(u8),
+    pub stderr: fn(u8),
+}
+
+#[derive(Debug)]
+pub enum CompileError {
+    SyntaxError,
+    TypeMismatch { expected: String, got: String },
+    InvalidValue(usize),
+    LabelNotFound(String),
+    LabelAlreadyExists(String),
+    ProgramTooLong,
+}
+
+#[derive(Debug)]
+pub enum RuntimeError {
+    IOError(std::io::Error),
+    IndexOutOfBounds { max: usize, got: usize },
+    InvalidValue(isize),
+    StripLimit,
+    DivideByZero,
+    Halt(u8),
+    StdinReadError(std::io::Error),
+}
+
+impl Strip {
+    pub fn len(&self) -> u8 { self.array.len() as u8 }
+
+    pub fn add_offset(&mut self, offset: u8) {
+        self.offset = (self.offset + offset) % self.len();
+    }
+}
+
+impl Index<u8> for Strip {
+    type Output = u8;
+    fn index(&self, i: u8) -> &u8 {
+        &self.array[((i + self.len() - self.offset) % self.len()) as usize]
+    }
+}
+
+impl IndexMut<u8> for Strip {
+    fn index_mut(&mut self, i: u8) -> &mut u8 {
+        let len = self.len();
+        &mut self.array[((i + len - self.offset) % len) as usize]
+    }
+}
+
+impl fmt::Display for Strip {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "(+{:0>2X})", self.offset)?;
+
+        for i in 0..self.len()
+        {
+            write!(f, "[{:0>2X}]", self[i])?;
+        }
+
+        write!(f, "")
+    }
+}
+
+impl ProgramEnvironment {
+    pub fn new(stdin: fn() -> Result<u8, std::io::Error>, stdout: fn(u8), stderr: fn(u8)) -> ProgramEnvironment {
+        ProgramEnvironment {
+            strips: Vec::new(),
+            correction: false,
+            ip: 0,
+            stdin,
+            stdout,
+            stderr,
+        }
+    }
+
+    pub fn len(&self) -> u8 { self.strips.len() as u8 }
+
+    pub fn mkstrip(&mut self, size: u8) { self.strips.push(Strip { array: vec![0; size as usize], offset: 0 }) }
+
+    pub fn mv_ip(&mut self, new_pos: u16) {
+        self.ip = new_pos;
+        self.correction = true;
+    }
+}
+
+impl Index<u8> for ProgramEnvironment {
+    type Output = Strip;
+    fn index(&self, i: u8) -> &Strip { &self.strips[i as usize] }
+}
+
+impl IndexMut<u8> for ProgramEnvironment {
+    fn index_mut(&mut self, i: u8) -> &mut Strip { &mut self.strips[i as usize] }
+}
+
+impl fmt::Display for ProgramEnvironment {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        for i in 0..self.len()
+        {
+            writeln!(f, "0x{:0>2X}: {}", i, self[i])?;
+        }
+
+        write!(f, "")
+    }
+}
+
+impl fmt::Display for CompileError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        use CompileError::*;
+
+        match self {
+            SyntaxError => write!(f, "Syntax error"),
+            TypeMismatch { expected, got } => write!(f, "Type mismatch: expected {}, got {}", expected, got),
+            InvalidValue(val) => write!(f, "Invalid value: {}", val),
+            LabelNotFound(lbl) => write!(f, "Label not found: {}", lbl),
+            LabelAlreadyExists(lbl) => write!(f, "Label already exists: {}", lbl),
+            ProgramTooLong => write!(f, "Program is too long! Max number of instructions: 65535 (0xFFFF)"),
+        }
+    }
+}
+
+impl fmt::Display for RuntimeError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        use RuntimeError::*;
+
+        match self {
+            IndexOutOfBounds { max, got } => write!(f, "Index out of bounds: {}, with max {}", got, max),
+            InvalidValue(val) => write!(f, "Invalid value: {}", val),
+            StripLimit => write!(f, "Strip limit reached: 255 strips have already been created"),
+            DivideByZero => write!(f, "Attempt to divide by zero"),
+            Halt(c) => write!(f, "Process finished with exit code {}", c),
+            StdinReadError(e) => write!(f, "Error reading from stdin: {}", e),
+            IOError(e) => write!(f, "Error reading from file: {}", e),
+        }
+    }
+}

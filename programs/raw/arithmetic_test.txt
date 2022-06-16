@@ -1,0 +1,30 @@
+mks 4
+mks 1
+mks 4
+
+put 1 5
+
+put 0 25
+rot 0 1
+put 0 5
+rot 0 1
+put 0 8
+rot 0 1
+put 0 3
+rot 0 1
+
+div 0 1 2
+rot 0 1
+rot 2 1
+
+mul 0 1 2
+rot 0 1
+rot 2 1
+
+sub 0 1 2
+rot 0 1
+rot 2 1
+
+add 0 1 2
+
+hlt 255
