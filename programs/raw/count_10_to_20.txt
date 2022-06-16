@@ -1,5 +1,5 @@
-mks 1
-mks 2
+mkr 1
+mkr 2
 put 0 10
 put 1 1
 rot 1 1

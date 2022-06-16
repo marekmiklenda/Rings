@@ -1,6 +1,6 @@
-mks 4
-mks 1
-mks 4
+mkr 4
+mkr 1
+mkr 4
 
 put 1 5
 

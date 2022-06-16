@@ -10,23 +10,23 @@ use crate::rings::root;
 pub type IFuncFn = fn(env: &mut ProgramEnvironment, instr: Cursor<&mut [u8]>) -> Result<(), RuntimeError>;
 pub type IArgsFn = fn(&mut Vec<u8>, &[&str], &[(String, u16)]) -> Result<(), CompileError>;
 
-pub const I_KEYS: [&str; 16] = ["mks", "put", "rot", "swp", "inp", "out", "err", "add", "sub", "mul", "div", "jmp", "jeq", "jgt", "jlt", "hlt"];
-pub const I_FUNC: [IFuncFn; 16] = [impl_mka, impl_put, impl_rot, impl_swp, impl_inp, impl_out, impl_err, impl_add, impl_sub, impl_mul, impl_div, impl_jmp, impl_jeq, impl_jgt, impl_jlt, impl_hlt];
-pub const I_ARGS: [IArgsFn; 16] = [args_mka, args_2u8, args_2u8, args_2u8, args_1u8, args_1u8, args_1u8, args_3u8, args_3u8, args_3u8, args_3u8, args_lbl, args_cjm, args_cjm, args_cjm, args_1u8];
+pub const I_KEYS: [&str; 16] = ["mkr", "put", "rot", "swp", "inp", "out", "err", "add", "sub", "mul", "div", "jmp", "jeq", "jgt", "jlt", "hlt"];
+pub const I_FUNC: [IFuncFn; 16] = [impl_mkr, impl_put, impl_rot, impl_swp, impl_inp, impl_out, impl_err, impl_add, impl_sub, impl_mul, impl_div, impl_jmp, impl_jeq, impl_jgt, impl_jlt, impl_hlt];
+pub const I_ARGS: [IArgsFn; 16] = [args_mkr, args_2u8, args_2u8, args_2u8, args_1u8, args_1u8, args_1u8, args_3u8, args_3u8, args_3u8, args_3u8, args_lbl, args_cjm, args_cjm, args_cjm, args_1u8];
 pub const I_SIZE: [usize; 16] = [1, 2, 2, 2, 1, 1, 1, 3, 3, 3, 3, 2, 4, 4, 4, 1];
 
-fn read_strip(env: &ProgramEnvironment, args: &mut Cursor<&mut [u8]>) -> Result<u8, RuntimeError> {
+fn read_ring(env: &ProgramEnvironment, args: &mut Cursor<&mut [u8]>) -> Result<u8, RuntimeError> {
     let val = args.read_u8().unwrap();
     if val > env.len() { return Err(RuntimeError::IndexOutOfBounds { got: val as usize, max: (env.len() - 1) as usize }); }
 
     Ok(val)
 }
 
-fn read_strips<'a>(len: u8, env: &'a mut ProgramEnvironment, args: &'a mut Cursor<&mut [u8]>) -> Result<Vec<u8>, RuntimeError> {
+fn read_rings<'a>(len: u8, env: &'a mut ProgramEnvironment, args: &'a mut Cursor<&mut [u8]>) -> Result<Vec<u8>, RuntimeError> {
     let mut result: Vec<u8> = vec![0; len as usize];
 
     for i in 0..len as usize {
-        match read_strip(env, args) {
+        match read_ring(env, args) {
             Ok(val) => result[i] = val,
             Err(e) => { return Err(e); }
         }
@@ -67,7 +67,7 @@ fn args_3u8(out: &mut Vec<u8>, args: &[&str], _: &[(String, u16)]) -> Result<(),
     dyn_args(3, 0, out, args)
 }
 
-fn args_mka(out: &mut Vec<u8>, args: &[&str], _: &[(String, u16)]) -> Result<(), CompileError> {
+fn args_mkr(out: &mut Vec<u8>, args: &[&str], _: &[(String, u16)]) -> Result<(), CompileError> {
     use CompileError::{SyntaxError, InvalidValue, TypeMismatch};
 
     if args.len() != 1 { return Err(SyntaxError); }
@@ -110,17 +110,17 @@ fn args_cjm(out: &mut Vec<u8>, args: &[&str], labels: &[(String, u16)]) -> Resul
 /*******************************
  * Instructions implementation *
  *******************************/
-fn impl_mka(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    if env.len() >= 255 { return Err(RuntimeError::StripLimit); }
-    env.mkstrip(args.read_u8().unwrap());
+fn impl_mkr(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
+    if env.len() >= 255 { return Err(RuntimeError::RingLimit); }
+    env.mkring(args.read_u8().unwrap());
     Ok(())
 }
 
 fn impl_put(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strip(env, &mut args) {
-        Ok(strip) => {
+    return match read_ring(env, &mut args) {
+        Ok(ring) => {
             let value = args.read_u8().unwrap();
-            env[strip][0] = value;
+            env[ring][0] = value;
 
             Ok(())
         }
@@ -129,10 +129,10 @@ fn impl_put(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_rot(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strip(env, &mut args) {
-        Ok(strip) => {
+    return match read_ring(env, &mut args) {
+        Ok(ring) => {
             let value = args.read_u8().unwrap();
-            env[strip].add_offset(value);
+            env[ring].add_offset(value);
 
             Ok(())
         }
@@ -141,9 +141,9 @@ fn impl_rot(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_swp(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(2, env, &mut args) {
-        Ok(strips) => {
-            (env[strips[0]][0], env[strips[1]][0]) = (env[strips[1]][0], env[strips[0]][0]);
+    return match read_rings(2, env, &mut args) {
+        Ok(rings) => {
+            (env[rings[0]][0], env[rings[1]][0]) = (env[rings[1]][0], env[rings[0]][0]);
 
             Ok(())
         }
@@ -152,11 +152,11 @@ fn impl_swp(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_inp(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strip(env, &mut args) {
-        Ok(strip) => {
+    return match read_ring(env, &mut args) {
+        Ok(ring) => {
             match (env.stdin)() {
                 Ok(val) => {
-                    env[strip][0] = val;
+                    env[ring][0] = val;
                     Ok(())
                 }
                 Err(e) => Err(StdinReadError(e))
@@ -167,9 +167,9 @@ fn impl_inp(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_out(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strip(env, &mut args) {
-        Ok(strip) => {
-            (env.stdout)(env[strip][0]);
+    return match read_ring(env, &mut args) {
+        Ok(ring) => {
+            (env.stdout)(env[ring][0]);
 
             Ok(())
         }
@@ -178,9 +178,9 @@ fn impl_out(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_err(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strip(env, &mut args) {
-        Ok(strip) => {
-            (env.stderr)(env[strip][0]);
+    return match read_ring(env, &mut args) {
+        Ok(ring) => {
+            (env.stderr)(env[ring][0]);
 
             Ok(())
         }
@@ -189,12 +189,12 @@ fn impl_err(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_add(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(3, env, &mut args) {
-        Ok(strips) => {
-            let value: u16 = env[strips[0]][0] as u16 + env[strips[1]][0] as u16;
+    return match read_rings(3, env, &mut args) {
+        Ok(rings) => {
+            let value: u16 = env[rings[0]][0] as u16 + env[rings[1]][0] as u16;
             if value > 255 { return Err(RuntimeError::InvalidValue(value as isize)); }
 
-            env[strips[2]][0] = value as u8;
+            env[rings[2]][0] = value as u8;
 
             Ok(())
         }
@@ -203,12 +203,12 @@ fn impl_add(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_sub(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(3, env, &mut args) {
-        Ok(strips) => {
-            let value: i16 = env[strips[0]][0] as i16 - env[strips[1]][0] as i16;
+    return match read_rings(3, env, &mut args) {
+        Ok(rings) => {
+            let value: i16 = env[rings[0]][0] as i16 - env[rings[1]][0] as i16;
             if value < 0 { return Err(RuntimeError::InvalidValue(value as isize)); }
 
-            env[strips[2]][0] = value as u8;
+            env[rings[2]][0] = value as u8;
 
             Ok(())
         }
@@ -217,12 +217,12 @@ fn impl_sub(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_mul(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(3, env, &mut args) {
-        Ok(strips) => {
-            let value: u16 = env[strips[0]][0] as u16 * env[strips[1]][0] as u16;
+    return match read_rings(3, env, &mut args) {
+        Ok(rings) => {
+            let value: u16 = env[rings[0]][0] as u16 * env[rings[1]][0] as u16;
             if value > 255 { return Err(RuntimeError::InvalidValue(value as isize)); }
 
-            env[strips[2]][0] = value as u8;
+            env[rings[2]][0] = value as u8;
 
             Ok(())
         }
@@ -231,11 +231,11 @@ fn impl_mul(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_div(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(3, env, &mut args) {
-        Ok(strips) => {
-            if env[strips[1]][0] == 0 { return Err(RuntimeError::DivideByZero); }
+    return match read_rings(3, env, &mut args) {
+        Ok(rings) => {
+            if env[rings[1]][0] == 0 { return Err(RuntimeError::DivideByZero); }
 
-            env[strips[2]][0] = env[strips[0]][0] / env[strips[1]][0];
+            env[rings[2]][0] = env[rings[0]][0] / env[rings[1]][0];
 
             Ok(())
         }
@@ -249,9 +249,9 @@ fn impl_jmp(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_jeq(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(2, env, &mut args) {
-        Ok(strips) => {
-            if env[strips[0]][0] != env[strips[1]][0] { return Ok(()); }
+    return match read_rings(2, env, &mut args) {
+        Ok(rings) => {
+            if env[rings[0]][0] != env[rings[1]][0] { return Ok(()); }
 
             env.mv_ip(args.read_u16::<BigEndian>().unwrap());
 
@@ -262,9 +262,9 @@ fn impl_jeq(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_jgt(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(2, env, &mut args) {
-        Ok(strips) => {
-            if env[strips[0]][0] <= env[strips[1]][0] { return Ok(()); }
+    return match read_rings(2, env, &mut args) {
+        Ok(rings) => {
+            if env[rings[0]][0] <= env[rings[1]][0] { return Ok(()); }
 
             env.mv_ip(args.read_u16::<BigEndian>().unwrap());
 
@@ -275,9 +275,9 @@ fn impl_jgt(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 }
 
 fn impl_jlt(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    return match read_strips(2, env, &mut args) {
-        Ok(strips) => {
-            if env[strips[0]][0] >= env[strips[1]][0] { return Ok(()); }
+    return match read_rings(2, env, &mut args) {
+        Ok(rings) => {
+            if env[rings[0]][0] >= env[rings[1]][0] { return Ok(()); }
 
             env.mv_ip(args.read_u16::<BigEndian>().unwrap());
 

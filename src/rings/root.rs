@@ -8,14 +8,14 @@ pub struct Instruction(pub u8, pub Vec<u8>);
 pub type Program = Vec<Vec<u8>>;
 
 #[derive(Debug)]
-pub struct Strip {
+pub struct Ring {
     array: Vec<u8>,
     offset: u8,
 }
 
 #[derive(Debug)]
 pub struct ProgramEnvironment {
-    strips: Vec<Strip>,
+    rings: Vec<Ring>,
     pub correction: bool,
     pub ip: u16,
     pub stdin: fn() -> Result<u8, std::io::Error>,
@@ -38,13 +38,13 @@ pub enum RuntimeError {
     IOError(std::io::Error),
     IndexOutOfBounds { max: usize, got: usize },
     InvalidValue(isize),
-    StripLimit,
+    RingLimit,
     DivideByZero,
     Halt(u8),
     StdinReadError(std::io::Error),
 }
 
-impl Strip {
+impl Ring {
     pub fn len(&self) -> u8 { self.array.len() as u8 }
 
     pub fn add_offset(&mut self, offset: u8) {
@@ -52,21 +52,21 @@ impl Strip {
     }
 }
 
-impl Index<u8> for Strip {
+impl Index<u8> for Ring {
     type Output = u8;
     fn index(&self, i: u8) -> &u8 {
         &self.array[((i + self.len() - self.offset) % self.len()) as usize]
     }
 }
 
-impl IndexMut<u8> for Strip {
+impl IndexMut<u8> for Ring {
     fn index_mut(&mut self, i: u8) -> &mut u8 {
         let len = self.len();
         &mut self.array[((i + len - self.offset) % len) as usize]
     }
 }
 
-impl fmt::Display for Strip {
+impl fmt::Display for Ring {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "(+{:0>2X})", self.offset)?;
 
@@ -82,7 +82,7 @@ impl fmt::Display for Strip {
 impl ProgramEnvironment {
     pub fn new(stdin: fn() -> Result<u8, std::io::Error>, stdout: fn(u8), stderr: fn(u8)) -> ProgramEnvironment {
         ProgramEnvironment {
-            strips: Vec::new(),
+            rings: Vec::new(),
             correction: false,
             ip: 0,
             stdin,
@@ -91,9 +91,9 @@ impl ProgramEnvironment {
         }
     }
 
-    pub fn len(&self) -> u8 { self.strips.len() as u8 }
+    pub fn len(&self) -> u8 { self.rings.len() as u8 }
 
-    pub fn mkstrip(&mut self, size: u8) { self.strips.push(Strip { array: vec![0; size as usize], offset: 0 }) }
+    pub fn mkring(&mut self, size: u8) { self.rings.push(Ring { array: vec![0; size as usize], offset: 0 }) }
 
     pub fn mv_ip(&mut self, new_pos: u16) {
         self.ip = new_pos;
@@ -102,12 +102,12 @@ impl ProgramEnvironment {
 }
 
 impl Index<u8> for ProgramEnvironment {
-    type Output = Strip;
-    fn index(&self, i: u8) -> &Strip { &self.strips[i as usize] }
+    type Output = Ring;
+    fn index(&self, i: u8) -> &Ring { &self.rings[i as usize] }
 }
 
 impl IndexMut<u8> for ProgramEnvironment {
-    fn index_mut(&mut self, i: u8) -> &mut Strip { &mut self.strips[i as usize] }
+    fn index_mut(&mut self, i: u8) -> &mut Ring { &mut self.rings[i as usize] }
 }
 
 impl fmt::Display for ProgramEnvironment {
@@ -143,7 +143,7 @@ impl fmt::Display for RuntimeError {
         match self {
             IndexOutOfBounds { max, got } => write!(f, "Index out of bounds: {}, with max {}", got, max),
             InvalidValue(val) => write!(f, "Invalid value: {}", val),
-            StripLimit => write!(f, "Strip limit reached: 255 strips have already been created"),
+            RingLimit => write!(f, "Ring limit reached: 255 rings have already been created"),
             DivideByZero => write!(f, "Attempt to divide by zero"),
             Halt(c) => write!(f, "Process finished with exit code {}", c),
             StdinReadError(e) => write!(f, "Error reading from stdin: {}", e),
