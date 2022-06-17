@@ -126,7 +126,7 @@ fn args_cjm(out: &mut Vec<u8>, args: &[&str], labels: &[(String, u16)]) -> Resul
  * Instructions implementation *
  *******************************/
 fn impl_mkr(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    if env.len() >= 255 { return Err(RuntimeError::RingLimit); }
+    if env.len() >= 256 { return Err(RuntimeError::RingLimit); }
     env.mkring(args.read_u8().unwrap());
     Ok(())
 }
