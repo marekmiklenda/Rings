@@ -1,4 +1,4 @@
-This is the original compiler and interpreter for the esolang Rings.
+This is the original compiler and interpreter for the esolang Rings, made for the June 2022 Esoland Discord competition. This is my first Rust project, so I hope it won't be too much of an eyesore.
 
 The entire interpreter is stored in a module named 'rings', with main.rs containing a simple cli
 implementation.
