@@ -6,7 +6,7 @@ use byteorder::ReadBytesExt;
 mod rings;
 
 fn help() {
-    eprintln!("usage:\ncompile [-h] SOURCE OUTPUT\nrun [-h] PROGRAM\n\noptional arguments:\n-h, --help       show this help message and exit\n\npositional arguments:\nSOURCE           path to a text file to compile\nOUTPUT           path to resulting .rn file\nPROGRAM          path to .rn file to execute");
+    eprintln!("usage:\ncompile [-h] SOURCE OUTPUT\nrun [-h] PROGRAM\n\noptional arguments:\n-h, --help       show this help message and exit\n\npositional arguments:\nSOURCE           path to a .hrn file to compile\nOUTPUT           path to put the resulting .rn file\nPROGRAM          path to a .rn file to execute");
 }
 
 fn panic_help() -> ! {
