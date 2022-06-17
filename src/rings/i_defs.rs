@@ -10,10 +10,25 @@ use crate::rings::root;
 pub type IFuncFn = fn(env: &mut ProgramEnvironment, instr: Cursor<&mut [u8]>) -> Result<(), RuntimeError>;
 pub type IArgsFn = fn(&mut Vec<u8>, &[&str], &[(String, u16)]) -> Result<(), CompileError>;
 
+//TODO: Make a struct InstructionDef and make a single array
 pub const I_KEYS: [&str; 16] = ["mkr", "put", "rot", "swp", "inp", "out", "err", "add", "sub", "mul", "div", "jmp", "jeq", "jgt", "jlt", "hlt"];
 pub const I_FUNC: [IFuncFn; 16] = [impl_mkr, impl_put, impl_rot, impl_swp, impl_inp, impl_out, impl_err, impl_add, impl_sub, impl_mul, impl_div, impl_jmp, impl_jeq, impl_jgt, impl_jlt, impl_hlt];
 pub const I_ARGS: [IArgsFn; 16] = [args_mkr, args_2u8, args_2u8, args_2u8, args_1u8, args_1u8, args_1u8, args_3u8, args_3u8, args_3u8, args_3u8, args_lbl, args_cjm, args_cjm, args_cjm, args_1u8];
 pub const I_SIZE: [usize; 16] = [1, 2, 2, 2, 1, 1, 1, 3, 3, 3, 3, 2, 4, 4, 4, 1];
+
+fn parse_u8(raw: &str) -> Result<u8, std::num::ParseIntError> {
+    if raw.starts_with("0x") {
+        return u8::from_str_radix(&raw[2..], 16);
+    }
+    if raw.starts_with("0b") {
+        return u8::from_str_radix(&raw[2..], 2);
+    }
+    if raw.len() > 1 && raw.starts_with("0") {
+        return u8::from_str_radix(&raw[1..], 8);
+    }
+
+    raw.parse::<u8>()
+}
 
 fn read_ring(env: &ProgramEnvironment, args: &mut Cursor<&mut [u8]>) -> Result<u8, RuntimeError> {
     let val = args.read_u8().unwrap();
@@ -37,7 +52,7 @@ fn read_rings<'a>(len: u8, env: &'a mut ProgramEnvironment, args: &'a mut Cursor
 
 fn dyn_args(num: u8, offset: u8, out: &mut Vec<u8>, args: &[&str]) -> Result<(), CompileError> {
     for i in offset as usize..(num + offset) as usize {
-        if let Ok(val) = args[i].parse::<u8>() {
+        if let Ok(val) = parse_u8(args[i]) {
             // Not the nicest, but gets rid of the compiler warning and doesn't completely discard the error, if it were to theoretically happen.
             if let Err(e) = out.write_u8(val) { panic!("{:?}", e) };
             continue;
@@ -72,7 +87,7 @@ fn args_mkr(out: &mut Vec<u8>, args: &[&str], _: &[(String, u16)]) -> Result<(),
 
     if args.len() != 1 { return Err(SyntaxError); }
 
-    if let Ok(len) = args[0].parse::<u8>() {
+    if let Ok(len) = parse_u8(args[0]) {
         if len == 0 { return Err(InvalidValue(len as usize)); }
         if let Err(e) = out.write_u8(len) { panic!("{:?}", e) };
 
