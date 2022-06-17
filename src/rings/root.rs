@@ -91,7 +91,7 @@ impl ProgramEnvironment {
         }
     }
 
-    pub fn len(&self) -> u8 { self.rings.len() as u8 }
+    pub fn len(&self) -> u16 { self.rings.len() as u16 }
 
     pub fn mkring(&mut self, size: u8) { self.rings.push(Ring { array: vec![0; size as usize], offset: 0 }) }
 
@@ -112,7 +112,7 @@ impl IndexMut<u8> for ProgramEnvironment {
 
 impl fmt::Display for ProgramEnvironment {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        for i in 0..self.len()
+        for i in 0..=(self.len() - 1) as u8
         {
             writeln!(f, "0x{:0>2X}: {}", i, self[i])?;
         }

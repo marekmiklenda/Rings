@@ -32,7 +32,7 @@ fn parse_u8(raw: &str) -> Result<u8, std::num::ParseIntError> {
 
 fn read_ring(env: &ProgramEnvironment, args: &mut Cursor<&mut [u8]>) -> Result<u8, RuntimeError> {
     let val = args.read_u8().unwrap();
-    if val > env.len() { return Err(RuntimeError::IndexOutOfBounds { got: val as usize, max: (env.len() - 1) as usize }); }
+    if val as u16 >= env.len() { return Err(RuntimeError::IndexOutOfBounds { got: val as usize, max: (env.len() - 1) as usize }); }
 
     Ok(val)
 }
@@ -126,7 +126,7 @@ fn args_cjm(out: &mut Vec<u8>, args: &[&str], labels: &[(String, u16)]) -> Resul
  * Instructions implementation *
  *******************************/
 fn impl_mkr(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
-    if env.len() >= 255 { return Err(RuntimeError::RingLimit); }
+    if env.len() >= 256 { return Err(RuntimeError::RingLimit); }
     env.mkring(args.read_u8().unwrap());
     Ok(())
 }
