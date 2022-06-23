@@ -3,7 +3,7 @@ This is the original compiler and interpreter for the esolang [Rings](https://es
 The entire interpreter is stored in a module named 'rings', with main.rs containing a simple cli
 implementation.
 
-The default implementation uses stdin as input.
+The default implementation uses standard IO for everything. Input on stdio, output on stdout and errors on stderr. Keep in mind that Rings only works with 8 bit unsigned integers, one per byte.
 
 ```
 usage:
