@@ -1,5 +1,4 @@
 use std::env;
-use std::io::Write;
 use std::iter::Iterator;
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
@@ -15,9 +14,9 @@ fn panic_help() -> ! {
     std::process::exit(64);
 }
 
-fn fn_stderr(e: u8) { std::io::stderr().write_u8(e); }
+fn fn_stderr(e: u8) -> Result<(), std::io::Error> { std::io::stderr().write_u8(e) }
 
-fn fn_stdout(o: u8) { std::io::stdout().write_u8(o); }
+fn fn_stdout(o: u8) -> Result<(), std::io::Error> { std::io::stdout().write_u8(o) }
 
 fn fn_stdin() -> Result<u8, std::io::Error> {
     return std::io::stdin().read_u8();

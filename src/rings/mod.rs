@@ -151,7 +151,7 @@ pub fn compile(source: &str, output: &str) -> Result<(), RingsCompileError> {
 }
 
 #[allow(dead_code)]
-pub fn run(program: &str, stdin: fn() -> Result<u8, std::io::Error>, stdout: fn(u8), stderr: fn(u8)) -> Result<u8, RuntimeError> {
+pub fn run(program: &str, stdin: fn() -> Result<u8, std::io::Error>, stdout: fn(u8) -> Result<(), std::io::Error>, stderr: fn(u8) -> Result<(), std::io::Error>) -> Result<u8, RuntimeError> {
     use RuntimeError::IOError;
 
     match File::open(program) {

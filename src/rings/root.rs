@@ -19,8 +19,8 @@ pub struct ProgramEnvironment {
     pub correction: bool,
     pub ip: u16,
     pub stdin: fn() -> Result<u8, std::io::Error>,
-    pub stdout: fn(u8),
-    pub stderr: fn(u8),
+    pub stdout: fn(u8) -> Result<(), std::io::Error>,
+    pub stderr: fn(u8) -> Result<(), std::io::Error>,
 }
 
 #[derive(Debug)]
@@ -41,7 +41,8 @@ pub enum RuntimeError {
     RingLimit,
     DivideByZero,
     Halt(u8),
-    StdinReadError(std::io::Error),
+    StdioReadError(std::io::Error),
+    StdioWriteError(std::io::Error),
 }
 
 impl Ring {
@@ -80,7 +81,7 @@ impl fmt::Display for Ring {
 }
 
 impl ProgramEnvironment {
-    pub fn new(stdin: fn() -> Result<u8, std::io::Error>, stdout: fn(u8), stderr: fn(u8)) -> ProgramEnvironment {
+    pub fn new(stdin: fn() -> Result<u8, std::io::Error>, stdout: fn(u8) -> Result<(), std::io::Error>, stderr: fn(u8) -> Result<(), std::io::Error>) -> ProgramEnvironment {
         ProgramEnvironment {
             rings: Vec::new(),
             correction: false,
@@ -146,8 +147,9 @@ impl fmt::Display for RuntimeError {
             RingLimit => write!(f, "Ring limit reached: 255 rings have already been created"),
             DivideByZero => write!(f, "Attempt to divide by zero"),
             Halt(c) => write!(f, "Process finished with exit code {}", c),
-            StdinReadError(e) => write!(f, "Error reading from stdin: {}", e),
+            StdioReadError(e) => write!(f, "Error reading from stdin: {}", e),
             IOError(e) => write!(f, "Error reading from file: {}", e),
+            StdioWriteError(e) => write!(f, "Error writing to stdout/stderr: {}", e),
         }
     }
 }

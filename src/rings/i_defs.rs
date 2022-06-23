@@ -3,9 +3,10 @@ use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use root::{CompileError, ProgramEnvironment, RuntimeError};
-use root::RuntimeError::{Halt, StdinReadError};
+use root::RuntimeError::{Halt, StdioReadError};
 
 use crate::rings::root;
+use crate::rings::root::RuntimeError::StdioWriteError;
 
 pub type IFuncFn = fn(env: &mut ProgramEnvironment, instr: Cursor<&mut [u8]>) -> Result<(), RuntimeError>;
 pub type IArgsFn = fn(&mut Vec<u8>, &[&str], &[(String, u16)]) -> Result<(), CompileError>;
@@ -174,7 +175,7 @@ fn impl_inp(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
                     env[ring][0] = val;
                     Ok(())
                 }
-                Err(e) => Err(StdinReadError(e))
+                Err(e) => Err(StdioReadError(e))
             }
         }
         Err(e) => Err(e)
@@ -184,7 +185,9 @@ fn impl_inp(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 fn impl_out(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
     return match read_ring(env, &mut args) {
         Ok(ring) => {
-            (env.stdout)(env[ring][0]);
+            if let Err(e) = (env.stdout)(env[ring][0]) {
+                return Err(StdioWriteError(e));
+            }
 
             Ok(())
         }
@@ -195,7 +198,9 @@ fn impl_out(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result
 fn impl_err(env: &mut ProgramEnvironment, mut args: Cursor<&mut [u8]>) -> Result<(), RuntimeError> {
     return match read_ring(env, &mut args) {
         Ok(ring) => {
-            (env.stderr)(env[ring][0]);
+            if let Err(e) = (env.stderr)(env[ring][0]) {
+                return Err(StdioWriteError(e));
+            }
 
             Ok(())
         }
