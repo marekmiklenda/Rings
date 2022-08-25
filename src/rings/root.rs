@@ -49,21 +49,21 @@ impl Ring {
     pub fn len(&self) -> u8 { self.array.len() as u8 }
 
     pub fn add_offset(&mut self, offset: u8) {
-        self.offset = (self.offset + offset) % self.len();
+        self.offset = ((self.offset as u16 + offset as u16) % self.len() as u16) as u8;
     }
 }
 
 impl Index<u8> for Ring {
     type Output = u8;
     fn index(&self, i: u8) -> &u8 {
-        &self.array[((i + self.len() - self.offset) % self.len()) as usize]
+        &self.array[((i as u16 + self.len() as u16 - self.offset as u16) % self.len() as u16) as usize]
     }
 }
 
 impl IndexMut<u8> for Ring {
     fn index_mut(&mut self, i: u8) -> &mut u8 {
-        let len = self.len();
-        &mut self.array[((i + len - self.offset) % len) as usize]
+        let len = self.len() as u16;
+        &mut self.array[((i as u16 + len - self.offset as u16) % len) as usize]
     }
 }
 
