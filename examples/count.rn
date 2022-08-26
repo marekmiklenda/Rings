@@ -1,0 +1,19 @@
+# Counts in stdout from 1 to 10
+
+# Ring 0 – Current number
+# Ring 1 – Constants
+mkr 1
+mkr 2
+
+# Put the constants on ring 1
+put 1 1
+rot 1 1
+put 1 10
+
+# Loop until 10
+:main_loop
+rot 1 1
+add 0 1 0
+out 0
+rot 1 1
+jlt 0 1 :main_loop
