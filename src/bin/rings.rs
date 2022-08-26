@@ -9,7 +9,7 @@ use rings::{debug, execute, precompile, Ring, RingsError, RingsErrorKind};
 #[clap(version)]
 #[clap(about="Rings interpreter", long_about = None)]
 struct Args {
-    /// File to operate on
+    /// File to run
     file: String,
 
     /// Verbose mode
@@ -24,7 +24,7 @@ struct Args {
     #[clap(short, long, action)]
     no_debug: bool,
 
-    /// Override STDIN values
+    /// Manually input stdin values, can specify multiple times
     #[clap(short, long, value_parser)]
     stdin: Option<Vec<u8>>,
 }

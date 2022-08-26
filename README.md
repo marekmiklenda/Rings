@@ -1,20 +1,17 @@
-This is the original compiler and interpreter for the esolang [Rings](https://esolangs.org/wiki/Rings), made for the June 2022 Esoland Discord competition. This is my first Rust project, so I hope it won't be too much of an eyesore.
-
-The entire interpreter is stored in a module named 'rings', with main.rs containing a simple cli
-implementation.
-
-The default implementation uses standard IO for everything. Input on stdio, output on stdout and errors on stderr. Keep in mind that Rings only works with 8 bit unsigned integers, one per byte.
+This is the original interpreter for the esolang [Rings](https://esolangs.org/wiki/Rings), made for the June 2022 Esoland Discord competition.
 
 ```
-usage:
-compile [-h] SOURCE OUTPUT
-run [-h] PROGRAM
+USAGE:
+    rings [OPTIONS] <FILE>
 
-optional arguments:
--h, --help       show this help message and exit
+ARGS:
+    <FILE>    File to run
 
-positional arguments:
-SOURCE           path to a .hrn file to compile
-OUTPUT           path to put the resulting .rn file
-PROGRAM          path to a .rn file to execute
+OPTIONS:
+    -b, --breakpoints <BREAKPOINTS>    Lines to debug, can specify multiple times
+    -h, --help                         Print help information
+    -n, --no-debug                     Disable generation of debug symbols
+    -s, --stdin <STDIN>                Manually input stdin values, can specify multiple times
+    -v, --verbose                      Verbose mode
+    -V, --version                      Print version information
 ```
