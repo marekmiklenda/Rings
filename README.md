@@ -1,4 +1,4 @@
-This is an original interpreter for [Rings](https://esolangs.org/wiki/Rings), made for the June 2022 Esoland Discord competition.
+This is an original interpreter for [Rings](https://esolangs.org/wiki/Rings), made for the June 2022 Esolang Discord competition.
 
 ```
 USAGE:
