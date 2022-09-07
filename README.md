@@ -12,6 +12,6 @@ OPTIONS:
     -h, --help                         Print help information
     -n, --no-debug                     Disable generation of debug symbols
     -s, --stdin <STDIN>                Manually input stdin values, can specify multiple times
-    -v, --verbose                      Verbose mode
+    -v, --verbose                      Verbose mode; stdout/stderr are formatted and printed
     -V, --version                      Print version information
 ```
