@@ -77,8 +77,8 @@ impl Instruction {
     ) -> Result<(), RingsErrorKind>
     where
         I: FnMut() -> u8,
-        O: Fn(u8),
-        E: Fn(u8),
+        O: FnMut(u8),
+        E: FnMut(u8),
     {
         use Instruction::*;
         use RingsErrorKind::*;

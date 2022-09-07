@@ -1,6 +1,9 @@
-use std::{collections::HashMap, io::stdin};
+use std::{
+    collections::HashMap,
+    io::{stderr, stdin, stdout},
+};
 
-use byteorder::ReadBytesExt;
+use byteorder::{ReadBytesExt, WriteBytesExt};
 use clap::Parser;
 use rings::{debug, execute, precompile, Ring, RingsError, RingsErrorKind};
 
@@ -12,7 +15,7 @@ struct Args {
     /// File to run
     file: String,
 
-    /// Verbose mode
+    /// Verbose mode; stdout/stderr are formatted and printed
     #[clap(short, long, action)]
     verbose: bool,
 
@@ -60,18 +63,32 @@ fn main() {
         }
     };
 
-    let mut term = stdin();
+    let mut stdin = stdin();
+    let mut stdout = stdout();
+    let mut stderr = stderr();
 
     let stdin_override = args.stdin.unwrap_or_default();
     let mut stdin_override = stdin_override.iter();
-    let stdin = || -> u8 {
+
+    let stdin_f = || -> u8 {
         stdin_override
             .next()
-            .map_or_else(|| term.read_u8().unwrap_or(0), |x| *x)
+            .map_or_else(|| stdin.read_u8().unwrap_or(0), |x| *x)
     };
-
-    let stdout = |x: u8| println!("{:<2X}", x);
-    let stderr = |x: u8| eprintln!("{:<2X}", x);
+    let stdout_f = |x: u8| {
+        if args.verbose {
+            println!("{:<2X}", x);
+        } else {
+            stdout.write_u8(x).ok();
+        }
+    };
+    let stderr_f = |x: u8| {
+        if args.verbose {
+            eprintln!("{:<2X}", x);
+        } else {
+            stderr.write_u8(x).ok();
+        }
+    };
 
     match match args.breakpoints {
         Some(dbg) => {
@@ -91,9 +108,9 @@ fn main() {
                 }
             };
 
-            debug(bytecode, (stdin, stdout, stderr), debug_callback)
+            debug(bytecode, (stdin_f, stdout_f, stderr_f), debug_callback)
         }
-        None => execute(bytecode, (stdin, stdout, stderr)),
+        None => execute(bytecode, (stdin_f, stdout_f, stderr_f)),
     } {
         Ok(exit) => println!("\nProcess finished with exit code {}", exit),
         Err(e) => print_error(e, debug_symbols),

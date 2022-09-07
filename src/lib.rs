@@ -271,8 +271,8 @@ pub fn precompile(
 pub fn execute<I, O, E>(bytecode: Vec<u8>, io: IO<I, O, E>) -> Result<u8, RingsError>
 where
     I: FnMut() -> u8,
-    O: Fn(u8),
-    E: Fn(u8),
+    O: FnMut(u8),
+    E: FnMut(u8),
 {
     debug(bytecode, io, |_, _| {})
 }
@@ -284,8 +284,8 @@ pub fn debug<I, O, E, C>(
 ) -> Result<u8, RingsError>
 where
     I: FnMut() -> u8,
-    O: Fn(u8),
-    E: Fn(u8),
+    O: FnMut(u8),
+    E: FnMut(u8),
     C: Fn(usize, &[Ring]),
 {
     let mut ip: usize = 0;
