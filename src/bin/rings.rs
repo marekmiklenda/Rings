@@ -5,7 +5,7 @@ use std::{
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use clap::Parser;
-use rings::{debug, execute, precompile, Ring, RingsError, RingsErrorKind};
+use rings::{debug, execute, precompile_file, Ring};
 
 #[derive(Parser, Debug)]
 #[clap(author = "Marek Miklenda")]
@@ -32,33 +32,14 @@ struct Args {
     stdin: Option<Vec<u8>>,
 }
 
-fn print_error(error: RingsError, debug_symbols: HashMap<usize, usize>) {
-    let line = *debug_symbols.get(&error.0).unwrap_or(&error.0);
-
-    use RingsErrorKind::*;
-
-    match error.1 {
-        IOError(e) => println!("{}", e),
-        SyntaxError(s) => println!("Syntax error on line {}: {}", line, s),
-        TooLarge => println!("Attempting to address outside address range (0xFFFF)"),
-        UndeclaredLabel(lbl) => println!("Use of undeclared label {}", lbl),
-        NonexistentRing(x) => println!(
-            "Attempting to manipulate nonexistent ring {} on line {}",
-            x, line
-        ),
-        TooManyRings => println!("Cannot declare any more rings at line {}", line),
-        InvalidValue(v) => println!("Attempting to use invalid value {} at line {}", v, line),
-        _ => {}
-    }
-}
-
 fn main() {
     let args = Args::parse();
 
-    let (bytecode, debug_symbols) = match precompile(&args.file, !args.no_debug, args.verbose) {
+    let (bytecode, debug_symbols) = match precompile_file(&args.file, !args.no_debug, args.verbose)
+    {
         Ok(prog) => prog,
         Err(e) => {
-            print_error(e, HashMap::new());
+            eprintln!("{}", e.format_error(HashMap::new()));
             return;
         }
     };
@@ -113,6 +94,6 @@ fn main() {
         None => execute(bytecode, (stdin_f, stdout_f, stderr_f)),
     } {
         Ok(exit) => println!("\nProcess finished with exit code {}", exit),
-        Err(e) => print_error(e, debug_symbols),
+        Err(e) => eprintln!("{}", e.format_error(debug_symbols)),
     };
 }

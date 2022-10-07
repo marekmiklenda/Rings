@@ -3,7 +3,6 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
     num::ParseIntError,
-    time::Instant,
     vec,
 };
 
@@ -91,11 +90,57 @@ impl From<std::io::Error> for RingsError {
     }
 }
 
-pub fn precompile(
+impl RingsError {
+    pub fn format_error(&self, debug_symbols: HashMap<usize, usize>) -> String {
+        let line = *debug_symbols.get(&self.0).unwrap_or(&self.0);
+
+        use RingsErrorKind::*;
+
+        match &self.1 {
+            IOError(e) => format!("{}", e),
+            SyntaxError(s) => format!("Syntax error on line {}: {}", line, s),
+            TooLarge => format!("Attempting to address outside address range (0xFFFF)"),
+            UndeclaredLabel(lbl) => format!("Use of undeclared label {}", lbl),
+            NonexistentRing(x) => format!(
+                "Attempting to manipulate nonexistent ring {} on line {}",
+                x, line
+            ),
+            TooManyRings => format!("Cannot declare any more rings at line {}", line),
+            InvalidValue(v) => format!("Attempting to use invalid value {} at line {}", v, line),
+            _ => "".to_owned(),
+        }
+    }
+}
+
+pub fn precompile_file(
     path: &str,
     gen_debug_symbols: bool,
     verbose: bool,
 ) -> Result<Program, RingsError> {
+    let file = File::open(path)?;
+    let reader = BufReader::new(&file);
+
+    precompile(reader, gen_debug_symbols, verbose)
+}
+
+pub fn precompile_text(
+    text: &str,
+    gen_debug_symbols: bool,
+    verbose: bool,
+) -> Result<Program, RingsError> {
+    let reader = BufReader::new(text.as_bytes());
+
+    precompile(reader, gen_debug_symbols, verbose)
+}
+
+fn precompile<T>(
+    reader: BufReader<T>,
+    gen_debug_symbols: bool,
+    verbose: bool,
+) -> Result<Program, RingsError>
+where
+    T: std::io::Read,
+{
     fn sn_error(line_number: usize, line: &str) -> Result<Program, RingsError> {
         Err(RingsError(
             line_number + 1,
@@ -127,15 +172,11 @@ pub fn precompile(
         itm.parse()
     }
 
-    let start = Instant::now();
-
     let log = |m: &str| {
         if verbose {
             println!("{}", m);
         }
     };
-
-    let file = File::open(path)?;
 
     let mut label_declarations: HashMap<String, u16> = HashMap::new();
     let mut label_accesses: Vec<String> = vec![];
@@ -144,7 +185,7 @@ pub fn precompile(
     let mut bytecode: Vec<u8> = vec![];
     let mut debug_symbols: HashMap<usize, usize> = HashMap::new();
 
-    for (line_number, line) in BufReader::new(&file).lines().flatten().enumerate() {
+    for (line_number, line) in reader.lines().flatten().enumerate() {
         let line = line.trim();
 
         if line.is_empty() || line.starts_with('#') {
@@ -261,10 +302,6 @@ pub fn precompile(
         print_program(&bytecode);
     }
 
-    log(&format!(
-        "\nCompilation done in {}µs",
-        start.elapsed().as_micros()
-    ));
     Ok((bytecode, debug_symbols))
 }
 
