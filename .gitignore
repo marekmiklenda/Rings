@@ -1,5 +1,2 @@
 /target
-/.idea/
-/Cargo.lock
-/Rings.iml
-/env/
+/env
