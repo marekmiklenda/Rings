@@ -1,4 +1,4 @@
-This is an original interpreter for [Rings](https://esolangs.org/wiki/Rings), made for the June 2022 Esolang Discord competition.
+Original interpreter for the esolang [Rings](https://esolangs.org/wiki/Rings). Also works as a library for more advanced usage.
 
 ```
 USAGE:
@@ -8,10 +8,7 @@ ARGS:
     <FILE>    File to run
 
 OPTIONS:
-    -b, --breakpoints <BREAKPOINTS>    Lines to debug, can specify multiple times
     -h, --help                         Print help information
-    -n, --no-debug                     Disable generation of debug symbols
-    -s, --stdin <STDIN>                Manually input stdin values, can specify multiple times
-    -v, --verbose                      Verbose mode; stdout/stderr are formatted and printed
+    -n, --no-debug                     Disable debugging. No trace will be provided on error.
     -V, --version                      Print version information
 ```

@@ -1,11 +1,7 @@
 # A simple cat program. Takes bytes until EOF (0xFF) and outputs them.
 
-# Ring 0 – IO cell
-# Ring 1 – Constant cell 0xFF
-mkr 1
-mkr 1
-
-put 1 0xFF
+mkr 1               # Ring 0 – IO cell
+mkr 1 put 1 0xFF    # Ring 1 – Constant cell 0xFF
 
 :loop
     inp 0

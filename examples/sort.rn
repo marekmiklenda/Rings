@@ -1,33 +1,19 @@
 # Simple sorting program
 #
 # Takes a list of integers (max 15) on stdin terminated by EOF (0xFF) and outputs them to stdout, terminated by EOF.
-# This program is very memory inefficient, because I go for small size and so I won't be doing memory optimization.
-#  This task could be solved using only two rings.
+# This task could be solved using only two rings.
 # Also no error handling or exit codes.
 
-# Ring 0 – Input
-# Ring 1 – Constant 1
-# Ring 2 – Constant 0xF
-# Ring 3 – Constant 0xFF
-# Ring 4 – Data length counter
-# Ring 5 – Counter 2
-# Ring 6 – Counter 3
-# Ring 7 – Output cell
-mkr 15
-mkr 1
-mkr 1
-mkr 1
-mkr 1
-mkr 1
-mkr 1
-mkr 1
+mkr 15                      # Ring 0 – Input
+mkr 1 put 1 1               # Ring 1 – Constant 1
+mkr 1 put 2 0xF             # Ring 2 – Constant 0xF
+mkr 1 put 3 0xFF            # Ring 3 – Constant 0xFF
+mkr 1                       # Ring 4 – Data length counter
+mkr 1                       # Ring 5 – Counter 2
+mkr 1                       # Ring 6 – Counter 3
+mkr 1                       # Ring 7 – Output cell
 
-put 1 1
-put 2 0xF
-put 3 0xFF
-
-# Loading input data until EOF
-:load_inputs
+:load_inputs                # Loading input data until EOF
     rot 0 1
     inp 0
     jeq 0 3 :loading_end
@@ -35,21 +21,16 @@ put 3 0xFF
     jmp :load_inputs
 :loading_end
 
-# If no data, skip to end.
-jeq 4 5 :end
+jeq 4 5 :end                # If no data, skip to end.
+sub 2 4 5                   # Remaining free space to fill
 
-# Remaining free space to fill
-sub 2 4 5
-
-# Filling the rest of the array with garbage 0xFF
-:garbage_fill
+:garbage_fill               # Filling the rest of the array with garbage 0xFF
     put 0 0xFF
     rot 0 1
     sub 5 1 5
     jgt 5 6 :garbage_fill
 
-# Iterate, always find the smallest value and output it
-:main_loop
+:main_loop                  # Iterate, always find the smallest value and output it
     put 7 0xFF
     :nested_loop
         rot 0 1
@@ -63,6 +44,5 @@ sub 2 4 5
     add 6 1 6
     jlt 6 4 :main_loop
 
-# Done. Emit EOF and end
 :end
-out 3
+out 3                       # Done. Emit EOF and end
